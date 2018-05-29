@@ -7,3 +7,8 @@ some learning notes on deep learning frameworks , such as Torch7, caffe
 
 # Caffe
 [plot loss](https://cvdreamer.wordpress.com/2016/07/27/how-to-plot-training/)
+
+# Tensorflow
+
+pip install tensorflow-gpu==1.7
+
