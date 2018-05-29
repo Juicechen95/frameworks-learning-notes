@@ -12,3 +12,4 @@ some learning notes on deep learning frameworks , such as Torch7, caffe
 
 pip install tensorflow-gpu==1.7
 
+pip install -r requirements.txt
