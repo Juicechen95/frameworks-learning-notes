@@ -1,0 +1,12 @@
+layer{
+  name: "debug_test"
+  type: "Python"
+  bottom: "score"
+  bottom: "seg_labels"
+  top: "score2"
+  python_param {
+            module: "debug_layer"
+            layer: "DebugLayer"
+            param_str: "{\'num_tasks\': 2, \'num_subspaces\': 1,\'init_schema\': 'imbalanced',\'lr_mult\': 1.0,\'base_lr\': 1e-3,\'channels\':64}"
+        }
+}
