@@ -17,3 +17,9 @@ ssh jcz@lingzhitec123456.hicp.net -p1022
 # MobaXterm
 
 Requirement:  local area network
+
+# Microsoft Remote Desktop Client (for Windows, Mac OS, iOS and Android).
+
+for remote computer, install [xrdp](https://github.com/neutrinolabs/xrdp);
+
+for local computer, install Microsoft Remote Desktop app.
