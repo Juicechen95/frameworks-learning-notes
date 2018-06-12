@@ -12,6 +12,8 @@ ssh jcz@202.120.37.127
 
 nohup jupyter notebook &
 
+ssh jcz@lingzhitec123456.hicp.net -p1022
+
 # MobaXterm
 
 Requirement:  local area network
