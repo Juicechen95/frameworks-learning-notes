@@ -13,3 +13,9 @@ some learning notes on deep learning frameworks , such as Torch7, caffe
 pip install tensorflow-gpu==1.7.0
 
 pip install -r requirements.txt
+
+import tensorflow 时找不搭配cuda:
+
+.bashrc
+export PATH="/usr/local/cuda/bin:$PATH"
+export LD_LIBRARY_PATH="/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
