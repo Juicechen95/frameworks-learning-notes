@@ -20,6 +20,9 @@ Requirement:  local area network
 
 # Microsoft Remote Desktop Client (for Windows, Mac OS, iOS and Android).
 
-for remote computer, install [xrdp](https://github.com/neutrinolabs/xrdp);，install [mate](https://jingyan.baidu.com/article/642c9d340aacfa644a46f73c.html) 桌面,
+for remote computer, install [xrdp](https://github.com/neutrinolabs/xrdp);，install [mate](https://jingyan.baidu.com/article/642c9d340aacfa644a46f73c.html) 桌面; 
+
+echo mate-session > .xsession
+sudo service xrdp restart
 
 for local computer, install Microsoft Remote Desktop app.
