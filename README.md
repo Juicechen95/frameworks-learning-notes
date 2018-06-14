@@ -1,5 +1,9 @@
-# frameworks-learning-notes
+# Frameworks-learning-notes
 some learning notes on deep learning frameworks , such as Torch7, caffe
+
+## Online tutorials
+* [cs230](https://cs230-stanford.github.io/)including tensorflow and pytorch
+* Justin Johnson’s [repository](https://github.com/jcjohnson/pytorch-examples) on some fundamental pytorch.
 
 
 # Torch7
