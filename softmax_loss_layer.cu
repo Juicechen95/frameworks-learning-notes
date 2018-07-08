@@ -4,16 +4,17 @@ layer{
   top: "seg_ims"
   top: "seg_labels"
   hdf5_data_param{
-    source: "/mnt/sh_flex_storage/project/mtl/seg/795train.txt"
+    #source: "/mnt/sh_flex_storage/project/mtl/seg/795train.txt"
+    source: "/home/chenzhij/project/cross_stitch/ss_net/data_small_train.txt"
     batch_size:1
   }
   include { phase: TRAIN }
 }
 layer {
-  name: "seg_conv1_1"
+  name: "conv1_1"
   type: "Convolution"
   bottom: "seg_ims"
-  top: "seg_conv1_1"
+  top: "conv1_1"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -30,16 +31,16 @@ layer {
   }
 }
 layer {
-  name: "seg_relu1_1"
+  name: "relu1_1"
   type: "ReLU"
-  bottom: "seg_conv1_1"
-  top: "seg_conv1_1"
+  bottom: "conv1_1"
+  top: "conv1_1"
 }
 layer {
-  name: "seg_conv1_2"
+  name: "conv1_2"
   type: "Convolution"
-  bottom: "seg_conv1_1"
-  top: "seg_conv1_2"
+  bottom: "conv1_1"
+  top: "conv1_2"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -56,28 +57,27 @@ layer {
   }
 }
 layer {
-  name: "seg_relu1_2"
+  name: "relu1_2"
   type: "ReLU"
-  bottom: "seg_conv1_2"
-  top: "seg_conv1_2"
+  bottom: "conv1_2"
+  top: "conv1_2"
 }
 layer {
-  name: "seg_pool1"
+  name: "pool1"
   type: "Pooling"
-  bottom: "seg_conv1_2"
-  top: "seg_pool1"
+  bottom: "conv1_2"
+  top: "pool1"
   pooling_param {
     pool: MAX
     kernel_size: 2
     stride: 2
   }
 }
-
 layer {
-  name: "seg_conv2_1"
+  name: "conv2_1"
   type: "Convolution"
-  bottom: "seg_pool1"
-  top: "seg_conv2_1"
+  bottom: "pool1"
+  top: "conv2_1"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -94,16 +94,16 @@ layer {
   }
 }
 layer {
-  name: "seg_relu2_1"
+  name: "relu2_1"
   type: "ReLU"
-  bottom: "seg_conv2_1"
-  top: "seg_conv2_1"
+  bottom: "conv2_1"
+  top: "conv2_1"
 }
 layer {
-  name: "seg_conv2_2"
+  name: "conv2_2"
   type: "Convolution"
-  bottom: "seg_conv2_1"
-  top: "seg_conv2_2"
+  bottom: "conv2_1"
+  top: "conv2_2"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -120,28 +120,27 @@ layer {
   }
 }
 layer {
-  name: "seg_relu2_2"
+  name: "relu2_2"
   type: "ReLU"
-  bottom: "seg_conv2_2"
-  top: "seg_conv2_2"
+  bottom: "conv2_2"
+  top: "conv2_2"
 }
 layer {
-  name: "seg_pool2"
+  name: "pool2"
   type: "Pooling"
-  bottom: "seg_conv2_2"
-  top: "seg_pool2"
+  bottom: "conv2_2"
+  top: "pool2"
   pooling_param {
     pool: MAX
     kernel_size: 2
     stride: 2
   }
 }
-
 layer {
-  name: "seg_conv3_1"
+  name: "conv3_1"
   type: "Convolution"
-  bottom: "seg_pool2"
-  top: "seg_conv3_1"
+  bottom: "pool2"
+  top: "conv3_1"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -158,16 +157,16 @@ layer {
   }
 }
 layer {
-  name: "seg_relu3_1"
+  name: "relu3_1"
   type: "ReLU"
-  bottom: "seg_conv3_1"
-  top: "seg_conv3_1"
+  bottom: "conv3_1"
+  top: "conv3_1"
 }
 layer {
-  name: "seg_conv3_2"
+  name: "conv3_2"
   type: "Convolution"
-  bottom: "seg_conv3_1"
-  top: "seg_conv3_2"
+  bottom: "conv3_1"
+  top: "conv3_2"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -184,16 +183,16 @@ layer {
   }
 }
 layer {
-  name: "seg_relu3_2"
+  name: "relu3_2"
   type: "ReLU"
-  bottom: "seg_conv3_2"
-  top: "seg_conv3_2"
+  bottom: "conv3_2"
+  top: "conv3_2"
 }
 layer {
-  name: "seg_conv3_3"
+  name: "conv3_3"
   type: "Convolution"
-  bottom: "seg_conv3_2"
-  top: "seg_conv3_3"
+  bottom: "conv3_2"
+  top: "conv3_3"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -210,28 +209,27 @@ layer {
   }
 }
 layer {
-  name: "seg_relu3_3"
+  name: "relu3_3"
   type: "ReLU"
-  bottom: "seg_conv3_3"
-  top: "seg_conv3_3"
+  bottom: "conv3_3"
+  top: "conv3_3"
 }
 layer {
-  name: "seg_pool3"
+  name: "pool3"
   type: "Pooling"
-  bottom: "seg_conv3_3"
-  top: "seg_pool3"
+  bottom: "conv3_3"
+  top: "pool3"
   pooling_param {
     pool: MAX
     kernel_size: 2
     stride: 2
   }
 }
-
 layer {
-  name: "seg_conv4_1"
+  name: "conv4_1"
   type: "Convolution"
-  bottom: "seg_pool3"
-  top: "seg_conv4_1"
+  bottom: "pool3"
+  top: "conv4_1"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -248,16 +246,16 @@ layer {
   }
 }
 layer {
-  name: "seg_relu4_1"
+  name: "relu4_1"
   type: "ReLU"
-  bottom: "seg_conv4_1"
-  top: "seg_conv4_1"
+  bottom: "conv4_1"
+  top: "conv4_1"
 }
 layer {
-  name: "seg_conv4_2"
+  name: "conv4_2"
   type: "Convolution"
-  bottom: "seg_conv4_1"
-  top: "seg_conv4_2"
+  bottom: "conv4_1"
+  top: "conv4_2"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -274,16 +272,16 @@ layer {
   }
 }
 layer {
-  name: "seg_relu4_2"
+  name: "relu4_2"
   type: "ReLU"
-  bottom: "seg_conv4_2"
-  top: "seg_conv4_2"
+  bottom: "conv4_2"
+  top: "conv4_2"
 }
 layer {
-  name: "seg_conv4_3"
+  name: "conv4_3"
   type: "Convolution"
-  bottom: "seg_conv4_2"
-  top: "seg_conv4_3"
+  bottom: "conv4_2"
+  top: "conv4_3"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -300,28 +298,27 @@ layer {
   }
 }
 layer {
-  name: "seg_relu4_3"
+  name: "relu4_3"
   type: "ReLU"
-  bottom: "seg_conv4_3"
-  top: "seg_conv4_3"
+  bottom: "conv4_3"
+  top: "conv4_3"
 }
 layer {
-  name: "seg_pool4"
+  name: "pool4"
   type: "Pooling"
-  bottom: "seg_conv4_3"
-  top: "seg_pool4"
+  bottom: "conv4_3"
+  top: "pool4"
   pooling_param {
     pool: MAX
     kernel_size: 2
     stride: 2
   }
 }
-
 layer {
-  name: "seg_conv5_1"
+  name: "conv5_1"
   type: "Convolution"
-  bottom: "seg_pool4"
-  top: "seg_conv5_1"
+  bottom: "pool4"
+  top: "conv5_1"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -338,16 +335,16 @@ layer {
   }
 }
 layer {
-  name: "seg_relu5_1"
+  name: "relu5_1"
   type: "ReLU"
-  bottom: "seg_conv5_1"
-  top: "seg_conv5_1"
+  bottom: "conv5_1"
+  top: "conv5_1"
 }
 layer {
-  name: "seg_conv5_2"
+  name: "conv5_2"
   type: "Convolution"
-  bottom: "seg_conv5_1"
-  top: "seg_conv5_2"
+  bottom: "conv5_1"
+  top: "conv5_2"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -364,16 +361,16 @@ layer {
   }
 }
 layer {
-  name: "seg_relu5_2"
+  name: "relu5_2"
   type: "ReLU"
-  bottom: "seg_conv5_2"
-  top: "seg_conv5_2"
+  bottom: "conv5_2"
+  top: "conv5_2"
 }
 layer {
-  name: "seg_conv5_3"
+  name: "conv5_3"
   type: "Convolution"
-  bottom: "seg_conv5_2"
-  top: "seg_conv5_3"
+  bottom: "conv5_2"
+  top: "conv5_3"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -390,28 +387,27 @@ layer {
   }
 }
 layer {
-  name: "seg_relu5_3"
+  name: "relu5_3"
   type: "ReLU"
-  bottom: "seg_conv5_3"
-  top: "seg_conv5_3"
+  bottom: "conv5_3"
+  top: "conv5_3"
 }
 layer {
-  name: "seg_pool5"
+  name: "pool5"
   type: "Pooling"
-  bottom: "seg_conv5_3"
-  top: "seg_pool5"
+  bottom: "conv5_3"
+  top: "pool5"
   pooling_param {
     pool: MAX
     kernel_size: 2
     stride: 2
   }
 }
-
 layer {
-  name: "seg_fc6"
+  name: "fc6"
   type: "Convolution"
-  bottom: "seg_pool5"
-  top: "seg_fc6"
+  bottom: "pool5"
+  top: "fc6"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -428,26 +424,25 @@ layer {
   }
 }
 layer {
-  name: "seg_relu6"
+  name: "relu6"
   type: "ReLU"
-  bottom: "seg_fc6"
-  top: "seg_fc6"
+  bottom: "fc6"
+  top: "fc6"
 }
 layer {
-  name: "seg_drop6"
+  name: "drop6"
   type: "Dropout"
-  bottom: "seg_fc6"
-  top: "seg_fc6"
+  bottom: "fc6"
+  top: "fc6"
   dropout_param {
     dropout_ratio: 0.5
   }
 }
-
 layer {
-  name: "seg_fc7"
+  name: "fc7"
   type: "Convolution"
-  bottom: "seg_fc6"
-  top: "seg_fc7"
+  bottom: "fc6"
+  top: "fc7"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -464,26 +459,25 @@ layer {
   }
 }
 layer {
-  name: "seg_relu7"
+  name: "relu7"
   type: "ReLU"
-  bottom: "seg_fc7"
-  top: "seg_fc7"
+  bottom: "fc7"
+  top: "fc7"
 }
 layer {
-  name: "seg_drop7"
+  name: "drop7"
   type: "Dropout"
-  bottom: "seg_fc7"
-  top: "seg_fc7"
+  bottom: "fc7"
+  top: "fc7"
   dropout_param {
     dropout_ratio: 0.5
   }
 }
-
 layer {
-  name: "seg_score_fr"
+  name: "score_fr"
   type: "Convolution"
-  bottom: "seg_fc7"
-  top: "seg_score_fr"
+  bottom: "fc7"
+  top: "score_fr"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -499,10 +493,10 @@ layer {
   }
 }
 layer {
-  name: "seg_upscore"
+  name: "upscore"
   type: "Deconvolution"
-  bottom: "seg_score_fr"
-  top: "seg_upscore"
+  bottom: "score_fr"
+  top: "upscore"
   param {
     lr_mult: 0
   }
@@ -514,22 +508,22 @@ layer {
   }
 }
 layer {
-  name: "seg_score"
+  name: "score"
   type: "Crop"
-  bottom: "seg_upscore"
+  bottom: "upscore"
   bottom: "seg_ims"
-  top: "seg_score"
+  top: "score"
   crop_param {
     axis: 2
     offset: 19
   }
 }
 layer {
-  name: "seg_loss"
+  name: "loss"
   type: "SoftmaxWithLoss"
-  bottom: "seg_score"
+  bottom: "score"
   bottom: "seg_labels"
-  top: "seg_loss"
+  top: "loss"
   loss_param {
     ignore_label: 255
     normalize: true
