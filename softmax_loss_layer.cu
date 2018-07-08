@@ -1,130 +1,537 @@
-#include <algorithm>
-#include <cfloat>
-#include <vector>
-
-#include "caffe/layers/softmax_loss_layer.hpp"
-#include "caffe/util/math_functions.hpp"
-
-namespace caffe {
-
-template <typename Dtype>
-__global__ void SoftmaxLossForwardGPU(const int nthreads,
-          const Dtype* prob_data, const Dtype* label, Dtype* loss,
-          const int num, const int dim, const int spatial_dim,
-          const bool has_ignore_label_, const int ignore_label_,
-          Dtype* counts) {
-  CUDA_KERNEL_LOOP(index, nthreads) {
-    const int n = index / spatial_dim;
-    const int s = index % spatial_dim;
-    const int label_value = static_cast<int>(label[n * spatial_dim + s]);
-    if (has_ignore_label_ && label_value == ignore_label_) {
-      loss[index] = 0;
-      counts[index] = 0;
-    } else {
-      loss[index] = -log(max(prob_data[n * dim + label_value * spatial_dim + s],
-                      Dtype(FLT_MIN)));
-      counts[index] = 1;
-    }
+layer{
+  name: "data"
+  type: "HDF5Data"
+  top: "seg_ims"
+  top: "seg_labels"
+  hdf5_data_param{
+    source: "/mnt/sh_flex_storage/project/mtl/seg/795train.txt"
+    batch_size:1
+  }
+  include { phase: TRAIN }
+}
+layer {
+  name: "seg_conv1_1"
+  type: "Convolution"
+  bottom: "seg_ims"
+  top: "seg_conv1_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 64
+    pad: 100
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu1_1"
+  type: "ReLU"
+  bottom: "seg_conv1_1"
+  top: "seg_conv1_1"
+}
+layer {
+  name: "seg_conv1_2"
+  type: "Convolution"
+  bottom: "seg_conv1_1"
+  top: "seg_conv1_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 64
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu1_2"
+  type: "ReLU"
+  bottom: "seg_conv1_2"
+  top: "seg_conv1_2"
+}
+layer {
+  name: "seg_pool1"
+  type: "Pooling"
+  bottom: "seg_conv1_2"
+  top: "seg_pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
   }
 }
 
-template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
-  const Dtype* prob_data = prob_.gpu_data();
-  const Dtype* label = bottom[1]->gpu_data();
-  const int dim = prob_.count() / outer_num_;
-  const int nthreads = outer_num_ * inner_num_;
-  // Since this memory is not used for anything, we use it here to avoid having
-  // to allocate new GPU memory to accumulate intermediate results.
-  Dtype* loss_data = bottom[0]->mutable_gpu_diff();
-  // Similarly, this memory is never used elsewhere, and thus we can use it
-  // to avoid having to allocate additional GPU memory.
-  Dtype* counts = prob_.mutable_gpu_diff();
-  // NOLINT_NEXT_LINE(whitespace/operators)
-  SoftmaxLossForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
-      CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,
-      outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
-  Dtype loss;
-  caffe_gpu_asum(nthreads, loss_data, &loss);
-  Dtype valid_count = -1;
-  // Only launch another CUDA kernel if we actually need the count of valid
-  // outputs.
-  if (normalization_ == LossParameter_NormalizationMode_VALID &&
-      has_ignore_label_) {
-    caffe_gpu_asum(nthreads, counts, &valid_count);
+layer {
+  name: "seg_conv2_1"
+  type: "Convolution"
+  bottom: "seg_pool1"
+  top: "seg_conv2_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
   }
-  top[0]->mutable_cpu_data()[0] = loss / get_normalizer(normalization_,
-                                                        valid_count);
-  if (top.size() == 2) {
-    top[1]->ShareData(prob_);
+  param {
+    lr_mult: 2
+    decay_mult: 0
   }
-
-  // Clear scratch memory to prevent interfering with backward (see #6202).
-  caffe_gpu_set(bottom[0]->count(), Dtype(0), bottom[0]->mutable_gpu_diff());
-}
-
-template <typename Dtype>
-__global__ void SoftmaxLossBackwardGPU(const int nthreads, const Dtype* top,
-          const Dtype* label, Dtype* bottom_diff, const int num, const int dim,
-          const int spatial_dim, const bool has_ignore_label_,
-          const int ignore_label_, Dtype* counts) {
-  const int channels = dim / spatial_dim;
-
-  CUDA_KERNEL_LOOP(index, nthreads) {
-    const int n = index / spatial_dim;
-    const int s = index % spatial_dim;
-    const int label_value = static_cast<int>(label[n * spatial_dim + s]);
-
-    if (has_ignore_label_ && label_value == ignore_label_) {
-      for (int c = 0; c < channels; ++c) {
-        bottom_diff[n * dim + c * spatial_dim + s] = 0;
-      }
-      counts[index] = 0;
-    } else {
-      bottom_diff[n * dim + label_value * spatial_dim + s] -= 1;
-      counts[index] = 1;
-    }
+  convolution_param {
+    num_output: 128
+    pad: 1
+    kernel_size: 3
+    stride: 1
   }
 }
-
-template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  if (propagate_down[1]) {
-    LOG(FATAL) << this->type()
-               << " Layer cannot backpropagate to label inputs.";
+layer {
+  name: "seg_relu2_1"
+  type: "ReLU"
+  bottom: "seg_conv2_1"
+  top: "seg_conv2_1"
+}
+layer {
+  name: "seg_conv2_2"
+  type: "Convolution"
+  bottom: "seg_conv2_1"
+  top: "seg_conv2_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
   }
-  if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
-    const Dtype* prob_data = prob_.gpu_data();
-    const Dtype* top_data = top[0]->gpu_data();
-    caffe_gpu_memcpy(prob_.count() * sizeof(Dtype), prob_data, bottom_diff);
-    const Dtype* label = bottom[1]->gpu_data();
-    const int dim = prob_.count() / outer_num_;
-    const int nthreads = outer_num_ * inner_num_;
-    // Since this memory is never used for anything else,
-    // we use to to avoid allocating new GPU memory.
-    Dtype* counts = prob_.mutable_gpu_diff();
-    // NOLINT_NEXT_LINE(whitespace/operators)
-    SoftmaxLossBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
-        CAFFE_CUDA_NUM_THREADS>>>(nthreads, top_data, label, bottom_diff,
-        outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
-
-    Dtype valid_count = -1;
-    // Only launch another CUDA kernel if we actually need the count of valid
-    // outputs.
-    if (normalization_ == LossParameter_NormalizationMode_VALID &&
-        has_ignore_label_) {
-      caffe_gpu_asum(nthreads, counts, &valid_count);
-    }
-    const Dtype loss_weight = top[0]->cpu_diff()[0] /
-                              get_normalizer(normalization_, valid_count);
-    caffe_gpu_scal(prob_.count(), loss_weight , bottom_diff);
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 128
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu2_2"
+  type: "ReLU"
+  bottom: "seg_conv2_2"
+  top: "seg_conv2_2"
+}
+layer {
+  name: "seg_pool2"
+  type: "Pooling"
+  bottom: "seg_conv2_2"
+  top: "seg_pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
   }
 }
 
-INSTANTIATE_LAYER_GPU_FUNCS(SoftmaxWithLossLayer);
+layer {
+  name: "seg_conv3_1"
+  type: "Convolution"
+  bottom: "seg_pool2"
+  top: "seg_conv3_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu3_1"
+  type: "ReLU"
+  bottom: "seg_conv3_1"
+  top: "seg_conv3_1"
+}
+layer {
+  name: "seg_conv3_2"
+  type: "Convolution"
+  bottom: "seg_conv3_1"
+  top: "seg_conv3_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu3_2"
+  type: "ReLU"
+  bottom: "seg_conv3_2"
+  top: "seg_conv3_2"
+}
+layer {
+  name: "seg_conv3_3"
+  type: "Convolution"
+  bottom: "seg_conv3_2"
+  top: "seg_conv3_3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu3_3"
+  type: "ReLU"
+  bottom: "seg_conv3_3"
+  top: "seg_conv3_3"
+}
+layer {
+  name: "seg_pool3"
+  type: "Pooling"
+  bottom: "seg_conv3_3"
+  top: "seg_pool3"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
 
-}  // namespace caffe
+layer {
+  name: "seg_conv4_1"
+  type: "Convolution"
+  bottom: "seg_pool3"
+  top: "seg_conv4_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu4_1"
+  type: "ReLU"
+  bottom: "seg_conv4_1"
+  top: "seg_conv4_1"
+}
+layer {
+  name: "seg_conv4_2"
+  type: "Convolution"
+  bottom: "seg_conv4_1"
+  top: "seg_conv4_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu4_2"
+  type: "ReLU"
+  bottom: "seg_conv4_2"
+  top: "seg_conv4_2"
+}
+layer {
+  name: "seg_conv4_3"
+  type: "Convolution"
+  bottom: "seg_conv4_2"
+  top: "seg_conv4_3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu4_3"
+  type: "ReLU"
+  bottom: "seg_conv4_3"
+  top: "seg_conv4_3"
+}
+layer {
+  name: "seg_pool4"
+  type: "Pooling"
+  bottom: "seg_conv4_3"
+  top: "seg_pool4"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+
+layer {
+  name: "seg_conv5_1"
+  type: "Convolution"
+  bottom: "seg_pool4"
+  top: "seg_conv5_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu5_1"
+  type: "ReLU"
+  bottom: "seg_conv5_1"
+  top: "seg_conv5_1"
+}
+layer {
+  name: "seg_conv5_2"
+  type: "Convolution"
+  bottom: "seg_conv5_1"
+  top: "seg_conv5_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu5_2"
+  type: "ReLU"
+  bottom: "seg_conv5_2"
+  top: "seg_conv5_2"
+}
+layer {
+  name: "seg_conv5_3"
+  type: "Convolution"
+  bottom: "seg_conv5_2"
+  top: "seg_conv5_3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 512
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu5_3"
+  type: "ReLU"
+  bottom: "seg_conv5_3"
+  top: "seg_conv5_3"
+}
+layer {
+  name: "seg_pool5"
+  type: "Pooling"
+  bottom: "seg_conv5_3"
+  top: "seg_pool5"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+
+layer {
+  name: "seg_fc6"
+  type: "Convolution"
+  bottom: "seg_pool5"
+  top: "seg_fc6"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 4096
+    pad: 0
+    kernel_size: 7
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu6"
+  type: "ReLU"
+  bottom: "seg_fc6"
+  top: "seg_fc6"
+}
+layer {
+  name: "seg_drop6"
+  type: "Dropout"
+  bottom: "seg_fc6"
+  top: "seg_fc6"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+
+layer {
+  name: "seg_fc7"
+  type: "Convolution"
+  bottom: "seg_fc6"
+  top: "seg_fc7"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 4096
+    pad: 0
+    kernel_size: 1
+    stride: 1
+  }
+}
+layer {
+  name: "seg_relu7"
+  type: "ReLU"
+  bottom: "seg_fc7"
+  top: "seg_fc7"
+}
+layer {
+  name: "seg_drop7"
+  type: "Dropout"
+  bottom: "seg_fc7"
+  top: "seg_fc7"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+
+layer {
+  name: "seg_score_fr"
+  type: "Convolution"
+  bottom: "seg_fc7"
+  top: "seg_score_fr"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  convolution_param {
+    num_output: 40
+    pad: 0
+    kernel_size: 1
+  }
+}
+layer {
+  name: "seg_upscore"
+  type: "Deconvolution"
+  bottom: "seg_score_fr"
+  top: "seg_upscore"
+  param {
+    lr_mult: 0
+  }
+  convolution_param {
+    num_output: 40
+    bias_term: false
+    kernel_size: 64
+    stride: 32
+  }
+}
+layer {
+  name: "seg_score"
+  type: "Crop"
+  bottom: "seg_upscore"
+  bottom: "seg_ims"
+  top: "seg_score"
+  crop_param {
+    axis: 2
+    offset: 19
+  }
+}
+layer {
+  name: "seg_loss"
+  type: "SoftmaxWithLoss"
+  bottom: "seg_score"
+  bottom: "seg_labels"
+  top: "seg_loss"
+  loss_param {
+    ignore_label: 255
+    normalize: true
+  }
+}
