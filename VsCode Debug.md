@@ -1,5 +1,6 @@
 
 # Python
+[reference](https://www.zhihu.com/question/50700473)
 ## lauch.json
 
 change the first part as following:
@@ -22,6 +23,7 @@ change the first part as following:
        
        ......
 ```
+Here, I use the pythonpath of my virtualenv.
 
 ## task.json
 shift+command+b，任务运行程序选择others，修改配置类似如下:
