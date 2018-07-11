@@ -4,7 +4,7 @@
 
 change the first part as following:
 
-'''python
+```python
 "version": "0.2.0",
     "configurations": [
         {
@@ -21,4 +21,4 @@ change the first part as following:
         },
        
        ......
-   '''
+```
