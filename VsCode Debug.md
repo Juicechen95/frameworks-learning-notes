@@ -1,6 +1,6 @@
 
 # Python
-- lauch.json
+## lauch.json
 
 change the first part as following:
 
@@ -21,4 +21,15 @@ change the first part as following:
         },
        
        ......
+```
+
+## task.json
+shift+command+b，任务运行程序选择others，修改配置类似如下:
+```json
+{
+            "version": "0.1.0",
+            "command" : "python",
+            "isShellCommand" : true,
+            "showOutput": "always",
+}
 ```
