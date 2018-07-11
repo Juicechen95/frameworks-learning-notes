@@ -1,10 +1,10 @@
 
 # Python
--lauch.json
+- lauch.json
 
 change the first part as following:
 
-'''
+'''python
 "version": "0.2.0",
     "configurations": [
         {
