@@ -9,6 +9,27 @@ some learning notes on deep learning frameworks , such as Torch7, caffe
 # Torch7
 [classification datasets results ranking](https://rodrigob.github.io/are_we_there_yet/build/classification_datasets_results.html)
 
+- install torch7 with cuda9,cudnn7 on intel intern
+
+```shell
+git clone https://github.com/torch/distro.git ~/torch --recursive
+
+cd ~/torch
+
+export CUDA_NVCC_FLAGS="-D__CUDA_NO_HALF_OPERATORS__"
+
+./install.sh
+
+cd ~
+
+git clone https://github.com/soumith/cudnn.torch.git -b R7
+
+cd cudnn.torch
+
+luarocks make cudnn-scm-1.rockspec
+```
+
+
 # Caffe
 
 ## create own layers
